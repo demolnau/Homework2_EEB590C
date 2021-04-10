@@ -1,0 +1,28 @@
+---
+title: "Homework 2 EEB590C"
+author: "Devin Molnau"
+date: "April 10, 2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Assignment:
+ Select one of the two datasets (HW2.dat1.csv or HW2.dat2.csv found in the Data Repository). Each contains a multivariate dataset and several independent (X) variables. Using the methods learned in weeks 6-10, examine patterns in the dataset. You may use one or more (or all) of the X-variables, and a variety of methods to describe the patterns.
+
+You must use at least one method from the material learned in:
+Weeks 6-7, Week 8, Week 9, and Week 10
+```{r echo=FALSE}
+#load appropriate libraries
+```
+
+```{r}
+#READ in both csv datasets
+```
+
+```{r}
+#Analyze dataset
+```
+
