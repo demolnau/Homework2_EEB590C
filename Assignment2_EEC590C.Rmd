@@ -15,11 +15,15 @@ knitr::opts_chunk$set(echo = TRUE)
 You must use at least one method from the material learned in:
 Weeks 6-7, Week 8, Week 9, and Week 10
 ```{r echo=FALSE}
+setwd("D:/Documents/BoxSync/Classes_Spring2021/Advanced_Biostatistics_EEB590C/Homework/Homework2_EEB590C")
 #load appropriate libraries
+
 ```
 
 ```{r}
 #READ in both csv datasets
+dat1<-read.csv("HW2.dat1.csv")
+dat2<-read.csv("HW2.dat2.csv")
 ```
 
 ```{r}
