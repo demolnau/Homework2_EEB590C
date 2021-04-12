@@ -17,16 +17,215 @@ Weeks 6-7, Week 8, Week 9, and Week 10
 ```{r echo=FALSE}
 setwd("D:/Documents/BoxSync/Classes_Spring2021/Advanced_Biostatistics_EEB590C/Homework/Homework2_EEB590C")
 #load appropriate libraries
+library(knitr)
+library(RRPP)
+library(geomorph)
 
 ```
 
 ```{r}
 #READ in both csv datasets
-dat1<-read.csv("HW2.dat1.csv")
-dat2<-read.csv("HW2.dat2.csv")
+dat1<-read.csv("HW2.dat1.csv", header= TRUE)
+dat2<-read.csv("HW2.dat2.csv", header = TRUE)
+```
+## WEEK 6 MATERIAL
+We selected dataset 1 to analyse.
+```{r}
+#Analyze dataset
+#binary data columns needs to be read in as factor, READ ABOUT WHAT DEFINES A FACTOR/HOW DOES R TREAT FACTORS
+#MANOVA via RRPP --> Pupfish example from class
+
+#log transform data?
+dat1.dat<-log(as.matrix(dat1[,(4:9)]))
+mydat<-rrpp.data.frame("Y"=dat1.dat,"X1"= as.factor(dat1$X1),"X2"= as.factor(dat1$X2),"X3"= dat1$X3)
+
+cor(dat1.dat)
+pairs(dat1.dat)
+var(dat1.dat)
+var(scale(dat1.dat))
+dist(dat1.dat, method= "euclidean")
+
+
+```
+### Single factor MANOVA
+```{r}
+#single factor MANOVA
+x1<-as.factor(dat1$X1)
+model1 <- lm(dat1.dat~x1)
+summary(model1)	#yields a set of univariate analyses
+
+summary(manova(model1))	#does multivariate test (using Pillai's)
+summary(manova(model1),test="Wilks")	#does multivariate test (using Wilks)
+
+##### MANOVA via RRPP
+model.rrpp <- lm.rrpp(dat1.dat~x1,data = mydat, print.progress = FALSE)
+anova(model.rrpp)
+plot(model.rrpp, type = "PC", pch=21, bg = x1)  #PC PLOT!
+legend("topright", levels(x1), pch = 21, pt.bg = 1:4)
+```
+### Factorial MANOVA
+```{r}
+#Factorial MANOVA
+model2<-lm(mydat$Y~mydat$X1*mydat$X2)
+summary(manova(model2))
+
+#Factorial MANOVA via RRPP
+model2.rrpp <- lm.rrpp(mydat$Y~mydat$X1*mydat$X2,data = mydat, print.progress = FALSE)
+anova(model2.rrpp)
+
+groups <- interaction(mydat$X1,mydat$X2)
+plot(model2.rrpp, type = "PC", pch=21, bg = groups)
+legend("topright", levels(groups), pch = 21, pt.bg = 1:4)
+
+```
+
+### Multivariate Regression
+```{r}
+#__________________________________________________________________________#
+### Multivariate Regression
+summary(manova(lm(mydat$Y~mydat$X3)))
+
+model.reg <- lm.rrpp(mydat$Y~mydat$X3, data = mydat, print.progress = FALSE)
+anova(model.reg)
+
+### Visualizing multivariate regression 
+plot(model.reg, type = "regression", reg.type = "RegScore", 
+     predictor = mydat$X3, pch=19)
+```
+### MANCOVA
+```{r}
+
+summary(manova(lm(mydat$Y~ mydat$X1*mydat$X2*mydat$X3))) #no iteraction significant, just X1 and X3 sig 
+summary(manova(lm(mydat$Y~ mydat$X1+mydat$X3))) # FIT COMMON SLOPE 
+
+
+#MANCOVA via RRPP
+model.mancova <- lm.rrpp(mydat$Y~ mydat$X1*mydat$X2*mydat$X3, data =mydat, print.progress = FALSE)
+anova(model.mancova)
+
+
+### Visualizing MANCOVA
+plot(model.mancova, type = "regression", reg.type = "RegScore", 
+     predictor = mydat$X3, pch=19, col = as.numeric(groups))
+
+plot(model.mancova, type = "regression", reg.type = "PredLine", 
+     predictor = mydat$X3, pch=19,
+     col = as.numeric(groups))
+
+```
+## WEEK 8 MATERIAL
+
+```{r}
+Y <- scale(mydat$Y, scale = FALSE) #center data
+pca.dat1<-prcomp(Y) #told nothing about groups
+summary(pca.dat1)
+```
+```{r}
+library(vegan)
+screeplot(pca.dat1,bstick = TRUE)  
 ```
 
 ```{r}
-#Analyze dataset
+pca.dat1$rotation[,1] 
 ```
+
+
+```{r}
+PC.scores<-pca.dat1$x
+PC.scores
+plot(PC.scores,xlab="PC I", ylab="PC II",asp=1,pch=21,bg=mydat$X1,cex = 1.5)
+legend("topright", levels(mydat$X1), pch = 21,pt.bg=1:2)
+
+```
+
+### Biplot
+```{r}
+#Biplot of dat1
+biplot(pca.dat1)
+```
+## WEEK 9 MATERIAL
+```{r}
+##UPGMA
+dat1.y.dist<-dist(PC.scores)
+dat1.y.upgma<-hclust(dat1.y.dist,method="average") 
+plot(as.dendrogram(dat1.y.upgma),horiz=TRUE,lwd=4)  #UPGMA
+
+
+
+```
+```{r}
+#PLOT of actual vs. UPGMA distances
+plot(dat1.y.dist,cophenetic(dat1.y.upgma))
+
+
+```
+
+
+```{r}
+# SAME from PC
+plot(dat1.y.dist,dist(PC.scores[,1:2]))
+
+```
+### K CLUSTERING METHODS
+#### Clustering by 4
+```{r}
+#K-means = 4
+kclusters4<-kmeans(PC.scores,4)
+plot(PC.scores[,1:2],col=kclusters4$cluster)
+points(kclusters4$centers, col = 1:4, pch = 8, cex=2)
+```
+#### Clustering by 3
+```{r}
+#K-means = 3
+kclusters3<-kmeans(PC.scores,3)
+plot(PC.scores[,1:2],col=kclusters3$cluster)
+points(kclusters3$centers, col = 1:3, pch = 8, cex=2)
+```
+#### Clustering by 2
+```{r}
+#K-means = 2
+kclusters2<-kmeans(PC.scores,2)
+plot(PC.scores[,1:2],col=kclusters2$cluster)
+points(kclusters2$centers, col = 1:2, pch = 8, cex=2)
+
+#NOTE: repeating k-means at a given level can lead to differing results
+```
+#### TESS: total error sums-of-squares
+Compare the total error sums-of-squares to see which grouping results in a leveling off of the kmeans of PC scores. 
+```{r}
+#compare TESS
+TESS<-array(NA,6)
+for (i in 1:6){
+  TESS[i]<-kmeans(PC.scores,i)$tot.withinss
+}
+plot( TESS)  #seems to bottom out at 3 groups
+```
+ Based on the TESS results, it appears that the mean PC.scores level off at about a k grouping of 3 so we will cluster by a kmean of 3. 
+```{r}
+plot(PC.scores[,1:2],col=kclusters3$cluster)
+points(kclusters3$centers, col = 1:3, pch = 8, cex=2)
+```
+
+## WEEK 10 MATERIAL
+### PLS
+```{r}
+
+pls.res<-two.b.pls(mydat$Y[,1], mydat$Y[,5],print.progress = FALSE)
+summary(pls.res)
+```
+```{r}
+plot(pls.res)
+```
+
+### Redundancy Analysis
+```{r}
+Y<-pca.dat1$x  
+col.gp<-rep("green",nrow(Y));   col.gp[which(mydat$X1== '0')]<-"red"
+shape.gp<-rep(21,nrow(Y));   shape.gp[which(mydat$X2== '0')]<-22
+rda.dat1<-rda(Y~mydat$X1+mydat$X2+mydat$X3+mydat$X1*mydat$X2)
+rda.scores<-predict(rda.dat1)
+plot(rda.scores,pch=shape.gp,bg=col.gp,asp=1,cex=1.5,xlab="RDA 1", ylab="RDA 2")
+```
+
+
 
