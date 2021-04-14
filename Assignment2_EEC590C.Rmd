@@ -1,6 +1,6 @@
 ---
 title: "Homework 2 EEB590C"
-author: "Devin Molnau"
+author: "Devin Molnau, Holly Loper, Elizabeth McMurchie"
 date: "April 10, 2021"
 output: pdf_document
 ---
@@ -22,11 +22,11 @@ library(RRPP)
 library(geomorph)
 
 ```
-
+Read in data1
 ```{r}
 #READ in both csv datasets
 dat1<-read.csv("HW2.dat1.csv", header= TRUE)
-dat2<-read.csv("HW2.dat2.csv", header = TRUE)
+# dat2<-read.csv("HW2.dat2.csv", header = TRUE)
 ```
 
 ## WEEK 6 MATERIAL
@@ -34,16 +34,29 @@ We selected dataset 1 to analyse.
 ```{r}
 dat1.dat<-log(as.matrix(dat1[,(4:9)]))
 mydat<-rrpp.data.frame("Y"=dat1.dat,"X1"= as.factor(dat1$X1),"X2"= as.factor(dat1$X2),"X3"= dat1$X3)
-
+```
+A brief look at the dataset. Looking at the correlation of the Y values. 
+```{r}
 cor(dat1.dat)
+```
+
+Pairs gives us a metric of scatterplots of the Y data just so we can visualize our multivariate data. 
+```{r}
 pairs(dat1.dat)
+```
+To look at the variances of the Y values we use the var() function.
+```{r}
 var(dat1.dat)
+```
+
+To scale that variance we can use scale() which will make the diagonal equal to 1.000
+```{r}
 var(scale(dat1.dat))
 #dist(dat1.dat, method= "euclidean")
 ```
 
 ### Single factor MANOVA
-
+To do a multivariate Y data against the X1 column we first ran a linear model lm() and then looked at the results using summary(manova()) Pillai's and Wilk's. We then do the test again using MANOVA from the RRPP package.
 ```{r}
 #single factor MANOVA
 x1<-as.factor(dat1$X1)
@@ -61,7 +74,7 @@ legend("topright", levels(x1), pch = 21, pt.bg = 1:4)
 ```
 
 ### Factorial MANOVA
-
+To assess the multivariate Y data against both X1 and X2 we use a factorial manova using the base R and then again in RRPP. There is a significance correlation of F=1.777e-14 between our Y data and X1.
 ```{r}
 #Factorial MANOVA
 model2<-lm(mydat$Y~mydat$X1*mydat$X2)
@@ -79,7 +92,7 @@ legend("topright", levels(groups), pch = 21, pt.bg = 1:4)
 
 
 ### Multivariate Regression
-
+To assess the multivariate Y data against X3 we use a multivariate regression using the base R and then again in RRPP. There is a significance correlation between our Y data and X3.
 ```{r}
 #__________________________________________________________________________#
 ### Multivariate Regression
@@ -94,7 +107,7 @@ plot(model.reg, type = "regression", reg.type = "RegScore",
 ```
 
 ### MANCOVA
-
+To assess the multivariate Y data against all three X columns (X1,X2, X3) we use a MANOVA (Multivariate Analysis of Variance) using the base R and MANCOVA (Multivariate Covariance Analysis of Variance) then again in RRPP. There is a significance correlation between our Y data and X1 and the Y data and X3.
 ```{r}
 
 summary(manova(lm(mydat$Y~ mydat$X1*mydat$X2*mydat$X3))) #no iteraction significant, just X1 and X3 sig 
@@ -117,22 +130,23 @@ plot(model.mancova, type = "regression", reg.type = "PredLine",
 ```
 
 ## WEEK 8 MATERIAL
-
+Principal components analysis (PCA) of the Y data
 ```{r}
 Y <- scale(mydat$Y, scale = FALSE) #center data
 pca.dat1<-prcomp(Y) #told nothing about groups
 summary(pca.dat1)
 ```
+Plot the PCA of the Y data using the vegan package. The broken stick plot shows us that PC1 accounts for the majority of the variance in our data.
 ```{r}
 library(vegan)
 screeplot(pca.dat1,bstick = TRUE)  
 ```
-
+To look at what compromises the PC1 variance we look at the rotation. The values that are farther away form 0 are more important for the PC.
 ```{r}
-pca.dat1$rotation[,1] 
+pca.dat1$rotation[,1] #PC1
 ```
 
-
+Plot PC.scores and color code based on the "levels of X1"
 ```{r}
 PC.scores<-pca.dat1$x
 
@@ -142,28 +156,24 @@ legend("topright", levels(mydat$X1), pch = 21,pt.bg=1:2)
 ```
 
 ### Biplot
-
+ To superimpose vectors for the variables in the PCA space we do a biplot of pca.dat1.The length of the vectors indicate the importance of variance from that Y. The Y3, Y4 and Y5 appear to be marginally longer although, all Y's appear to be approximately the same length and therefore importance to teh variance.
 ```{r}
 #Biplot of dat1
 biplot(pca.dat1)
 ```
 
 ## WEEK 9 MATERIAL
-
+ To cluster using UPGMA we first make a distance matrix (default is euclidean) of the PC scores and then perform a hierarchical cluster analysis using hclust()
 ```{r}
 ##UPGMA
 dat1.y.dist<-dist(PC.scores)
 dat1.y.upgma<-hclust(dat1.y.dist,method="average") 
 plot(as.dendrogram(dat1.y.upgma),horiz=TRUE,lwd=4)  #UPGMA
 
-
-
 ```
 ```{r}
 #PLOT of actual vs. UPGMA distances
 plot(dat1.y.dist,cophenetic(dat1.y.upgma))
-
-
 ```
 
 
@@ -174,8 +184,9 @@ plot(dat1.y.dist,dist(PC.scores[,1:2]))
 ```
 
 ### K-MEANS CLUSTERING METHODS
-
+To cluster using non-hierarchical method of identifying groups
 #### Clustering by 4
+Clustering under the assumption of 4 groups (k=4).
 
 ```{r}
 #K-means = 4
@@ -185,7 +196,7 @@ points(kclusters4$centers, col = 1:4, pch = 8, cex=2)
 ```
 
 #### Clustering by 3
-
+Clustering under the assumption of 3 groups (k=3).
 ```{r}
 #K-means = 3
 kclusters3<-kmeans(PC.scores,3)
@@ -194,7 +205,7 @@ points(kclusters3$centers, col = 1:3, pch = 8, cex=2)
 ```
 
 #### Clustering by 2
-
+Clustering under the assumption of 2 groups (k=2).
 ```{r}
 #K-means = 2
 kclusters2<-kmeans(PC.scores,2)
@@ -205,7 +216,6 @@ points(kclusters2$centers, col = 1:2, pch = 8, cex=2)
 ```
 
 #### TESS: total error sums-of-squares
-
 Compare the total error sums-of-squares to see which grouping results in a leveling off of the kmeans of PC scores. 
 ```{r}
 #compare TESS
@@ -215,19 +225,16 @@ for (i in 1:6){
 }
 plot( TESS)  #seems to bottom out at 3 groups
 ```
- Based on the TESS results, it appears that the mean PC.scores level off at about a k grouping of 3 so we will cluster by a kmean of 3. 
-```{r}
-plot(PC.scores[,1:2],col=kclusters3$cluster)
-points(kclusters3$centers, col = 1:3, pch = 8, cex=2)
-```
-
-
+ 
+ 
+ Based on the TESS results, it appears that the mean PC.scores level off at about a k grouping of 3 or 4, but this appears to be very gradual and the groups are not clearly defined. We would argue that there is only really one group (k=1).
+ 
 ## WEEK 10 MATERIAL
 
 ### Partial Least Squares (PLS)
-
+PLS is to summarize covariation between columns. We chose to look at the covariation of Y4 and Y5 because the PC1 choses these as teh columns with the most variation. Comparing the covarion of the two columns we get a pvalue of 0.001.
 ```{r}
-pls.res<-two.b.pls(mydat$Y[,1], mydat$Y[,5],print.progress = FALSE)
+pls.res<-two.b.pls(mydat$Y[,4], mydat$Y[,5],print.progress = FALSE)
 summary(pls.res)
 ```
 ```{r}
